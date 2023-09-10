@@ -3,8 +3,8 @@
 	"name": "Adding Book Plugin",
 	"version": "0.0.1",
 	"minAppVersion": "0,0.15",
-	"description": "This plagin help me to archive my books by categories. Simple way to create note with data into obsidian",
-	"author": "Sviatoslav Melnikov",
+	"description": "This plagin helps me to archive my books by categories. Simple way to create notes with data into obsidian",
+	"author": "S. M.",
 	"authorUrl": "",
 	"fundingUrl": "",
 	"isDesktopOnly": false

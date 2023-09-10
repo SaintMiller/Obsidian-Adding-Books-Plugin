@@ -1,3 +1,7 @@
+import { BookTemplate } from 'Book';
+import { ExtractorFB2 } from 'Utility/ExtractorFB2';
+import { ExtractorPDF } from 'Utility/ExtractorPDF';
+import { Utility } from 'Utility/UtilityFunction';
 import { App, Menu, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
@@ -6,12 +10,14 @@ interface MyPluginSettings {
 	mySetting: string;
 	bookShellFolderPath: string;
 	bookNotesFolderPath: string;
+	bookData: BookTemplate;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default',
 	bookShellFolderPath: "",
 	bookNotesFolderPath: "",
+	bookData: new BookTemplate(),
 }
 
 export default class MyPlugin extends Plugin {
@@ -25,9 +31,8 @@ export default class MyPlugin extends Plugin {
 			// Called when the user clicks the icon.
 			new Notice('This is a notice!');
 			new SampleModal(this.app).open();
-
-
-
+			
+			// added element for options into ribon
 			const menu = new Menu();
 
 			menu.addItem((item) =>
@@ -78,41 +83,49 @@ export default class MyPlugin extends Plugin {
 		// statusBarItemEl.setText('Status Bar Text');
 
 		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+		
+		// this.addCommand({
+		// 	id: 'open-sample-modal-simple',
+		// 	name: 'Open sample modal (simple)',
+		// 	callback: () => {
+		// 		new SampleModal(this.app).open();
+		// 	}
+		// });
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
+
+		// This adds an editor command that can perform some operation on the current editor instance
+		
+		
+		// this.addCommand({
+		// 	id: 'sample-editor-command',
+		// 	name: 'Sample editor command',
+		// 	editorCallback: (editor: Editor, view: MarkdownView) => {
+		// 		console.log(editor.getSelection());
+		// 		editor.replaceSelection('Sample Editor Command');
+		// 	}
+		// });
+
+
+		// This adds a complex command that can check whether the current state of the app allows execution of the command
+		
+		// this.addCommand({
+		// 	id: 'open-sample-modal-complex',
+		// 	name: 'Open sample modal (complex)',
+		// 	checkCallback: (checking: boolean) => {
+		// 		// Conditions to check
+		// 		const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		// 		if (markdownView) {
+		// 			// If checking is true, we're simply "checking" if the command can be run.
+		// 			// If checking is false, then we want to actually perform the operation.
+		// 			if (!checking) {
+		// 				new SampleModal(this.app).open();
+		// 			}
+
+		// 			// This command will only show up in Command Palette when the check function returns true
+		// 			return true;
+		// 		}
+		// 	}
+		// });
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
@@ -147,7 +160,7 @@ class SampleModal extends Modal {
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Woah!2');
+		contentEl.setText('Drop your file into this window');
 
 		// // create a fields for new book
 		// new Setting(contentEl)
@@ -160,30 +173,20 @@ class SampleModal extends Modal {
 		// 			// Обробник події при зміні значення поля 1
 		// 			console.log('Field 1 value changed:', value);
 		// 		}));
-				
+		this.createFiels(contentEl);
+
 		
 
-
-		// contentEl.createEl('button', { text: 'Save' }).addEventListener('click', () => {
-		// 	// Отримайте значення полів та збережіть їх
-		// 	const field1Value = 1;
-		// 	const field2Value = 2;
-		// 	const field3Value = 3;
-
-		// 	// Збережіть значення або зробіть з ними щось інше за потребою
-		// 	console.log('Field 1 value:', field1Value);
-		// 	console.log('Field 2 value:', field2Value);
-		// 	console.log('Field 3 value:', field3Value);
-
-		// 	// Закрийте модальне вікно
-		// 	this.close();
-		// });
+		contentEl.createEl("div", {});
+		contentEl.createEl('button', { text: 'Create a new note' }).addEventListener('click', () => {
+			new Notice('File will be saved!\nNot yet');
+			this.close();
+		});
 
 		// Створіть обробник події для перетягування файлу
 		contentEl.addEventListener('dragover', (event) => {
 			event.preventDefault();
 			event.stopPropagation();
-			//new Notice("dragover");
 		});
 
 		contentEl.addEventListener('drop', async (event) => {
@@ -194,19 +197,24 @@ class SampleModal extends Modal {
 			if (!files) {
 				return;
 			}
-
-			new Notice("drop");
 			new Notice( (files.length).toString());
 			if (files.length > 0) {
-				// Отримайте перший файл зі списку
 				const file = files[0];
-				new Notice("File name: " + file.name);
-				// Отримайте дані з файлу
-				const fileContents = await this.readFileContents(file);
+				const extension = Utility.getFileExtension(file.name).toLowerCase();
+				
+				let extractor;
+				if (extension == "pdf"){
+					extractor = new ExtractorPDF();
+				} else if (extension == "fb2"){
+					extractor = new ExtractorFB2();
+				} else {
+					new Notice("Error with extension");
+					return;
+				}
 
-				// Обробіть отримані дані, наприклад, виведіть їх у вікно
+				const fileContents = await extractor.readFileContents(file) as BookTemplate;
 				new Notice("File name: " + file.name);
-				//new Notice("File contents: "+ fileContents);
+				new Notice("File contents: "+ fileContents.title);
 			}
 		});
 	}
@@ -216,25 +224,102 @@ class SampleModal extends Modal {
 		contentEl.empty();
 	}
 
-	async readFileContents(file: Blob) {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			new Notice("readFileContents");
+	// Do something with gotted BookTemplate Data
+	// Create a notes
+	// save a file into new place
 
-			reader.onload = (event) => {
-				// general code for read
-				const contents = event.target?.result;
-				resolve(contents);
-			};
+	private createFiels(contentEl: HTMLElement) {
+		new Setting(contentEl)
+			.setName('Title')
+			.setDesc('Book name')
+			.addText(text => text
+				.setPlaceholder('Enter title for new book')
+				.setValue('')
+				.onChange(async (value) => {
+					console.log('Field 1 value changed:', value);
+				}));
+			
+		// new Setting(contentEl)
+		// 	.setName('Author/s')
+		// 	.setDesc('Add authors using ","')
+		// 	.addText(text => text
+		// 		.setPlaceholder('Enter values')
+		// 		.setValue('')
+		// 		.onChange(async (value) => {
+		// 			console.log('Field 1 value changed:', value);
+		// 		}));
+		
+		
 
-			reader.onerror = (event) => {
-				new Notice("Some error happend in readFileContents");
-				reject(event.error);
-			};
+		this.AddSetting(contentEl, 
+			'Author/s', 
+			'Add authors using ","', 
+			async (value: string) => {
+				console.log('Field 1 value changed:', value);
+			}
+		)	
 
-			reader.readAsText(file);
-			new Notice("readFileContents2");
+		new Setting(contentEl)
+			.setName('Settings Name')
+			.setDesc('Settings Description');
+
+		const columnsContainer = contentEl.createEl('div', {
+			cls: 'two-columns-container'
 		});
+
+		const column1 = columnsContainer.createEl('div', {
+			cls: 'column'
+		}) as HTMLElement;
+
+		column1.createEl('h3', { text: 'Column 1' });
+
+		this.AddSetting(column1,
+			'Enter value 1',
+			'haha',
+			async (value: string) => {
+				console.log('Field 1 value changed:', value);
+			}
+		)	
+
+		const column2 = columnsContainer.createEl('div', {
+			cls: 'column'
+		});
+
+		column2.createEl('h3', { text: 'Column 2' });
+		this.AddSetting(column2,
+			'Enter value 2',
+			'haha2',
+			async (value: string) => {
+				console.log('Field 1 value changed:', value);
+			}
+		)
+		const style = document.createElement('style');
+		style.innerHTML = `
+			.two-columns-container {
+				display: flex;
+				justify-content: space-between;
+			}
+			.column {
+				flex: 1;
+				margin-right: 10px; /*gap between colomn*/
+			}
+		`;
+		document.head.appendChild(style);
+	}
+
+
+	private AddSetting(
+		contentEl: HTMLElement, 
+		Name: string, 
+		Desc: string, 
+		callback: (value: string) => any) {
+		new Setting(contentEl)
+			.setName(Name)
+			.setDesc(Desc)
+			.addText(text => text
+				.setPlaceholder('Enter values')
+				.setValue('')
+				.onChange(callback));
 	}
 }
 

@@ -1,13 +1,13 @@
-class BookTemplate 
+export class BookTemplate 
 {
-    title: ""
-    author: ""
-    publisher: ""
-    publishDate: ""
-    totalPage: ""
-    isbn10: ""
-    isbn13: ""
-    coverUrl: ""
-    extension: ""
-    hashSize: ""
+    title: string;
+    author: string[];
+    publisher: string;
+    publishDate: string;
+    totalPage: string;
+    isbn10: string;
+    isbn13: string;
+    coverUrl: string;
+    extension: string;
+    hashSize: string;
 }
