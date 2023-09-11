@@ -2,7 +2,9 @@ import { BookTemplate } from 'Book';
 import { ExtractorFB2 } from 'Utility/ExtractorFB2';
 import { ExtractorPDF } from 'Utility/ExtractorPDF';
 import { Utility } from 'Utility/UtilityFunction';
-import { App, Menu, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import * as fs from 'fs';
+
+import { App, Menu, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFolder, TFile } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -25,12 +27,14 @@ export default class MyPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('package-search', 'Sample Plugin', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
+
 			new Notice('This is a notice!');
-			new SampleModal(this.app).open();
+			new SampleModal(this.app, this.settings).open();
 			
 			// added element for options into ribon
 			const menu = new Menu();
@@ -154,28 +158,23 @@ export default class MyPlugin extends Plugin {
 }
 
 class SampleModal extends Modal {
-	constructor(app: App) {
+	settingsData: MyPluginSettings;
+	bookData: BookTemplate;
+
+	constructor(app: App, settingsData: MyPluginSettings) {
 		super(app);
+		this.settingsData = settingsData;
+		//this.bookdata = settingsData.bookData;
+
+		this.bookData = new BookTemplate();
+
 	}
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Drop your file into this window');
+		contentEl.createEl("h1",{text:'Drop your file into this window'});
 
-		// // create a fields for new book
-		// new Setting(contentEl)
-		// 	.setName('Field 1')
-		// 	.setDesc('Description for Field 1')
-		// 	.addText(text => text
-		// 		.setPlaceholder('Enter value for Field 1')
-		// 		.setValue('') // Початкове значення
-		// 		.onChange(async (value) => {
-		// 			// Обробник події при зміні значення поля 1
-		// 			console.log('Field 1 value changed:', value);
-		// 		}));
 		this.createFiels(contentEl);
-
-		
 
 		contentEl.createEl("div", {});
 		contentEl.createEl('button', { text: 'Create a new note' }).addEventListener('click', () => {
@@ -217,6 +216,7 @@ class SampleModal extends Modal {
 				new Notice("File contents: "+ fileContents.title);
 			}
 		});
+
 	}
 
 	onClose() {
@@ -229,96 +229,139 @@ class SampleModal extends Modal {
 	// save a file into new place
 
 	private createFiels(contentEl: HTMLElement) {
-		new Setting(contentEl)
-			.setName('Title')
-			.setDesc('Book name')
-			.addText(text => text
-				.setPlaceholder('Enter title for new book')
-				.setValue('')
-				.onChange(async (value) => {
-					console.log('Field 1 value changed:', value);
-				}));
-			
-		// new Setting(contentEl)
-		// 	.setName('Author/s')
-		// 	.setDesc('Add authors using ","')
-		// 	.addText(text => text
-		// 		.setPlaceholder('Enter values')
-		// 		.setValue('')
-		// 		.onChange(async (value) => {
-		// 			console.log('Field 1 value changed:', value);
-		// 		}));
+		let booknameHeader: HTMLHeadingElement;
+		const bookdata = this.bookData;
+
+		function updateOtherElements() {
+			// update another elements after updating code
+			booknameHeader.setText('Future book`s name:' + Utility.prepareFilename(bookdata));
+		}
 		
-		
+		const columnsContainer = contentEl.createEl('div', {cls: 'two-columns-container'});
 
-		this.AddSetting(contentEl, 
-			'Author/s', 
-			'Add authors using ","', 
-			async (value: string) => {
-				console.log('Field 1 value changed:', value);
-			}
-		)	
-
-		new Setting(contentEl)
-			.setName('Settings Name')
-			.setDesc('Settings Description');
-
-		const columnsContainer = contentEl.createEl('div', {
-			cls: 'two-columns-container'
-		});
-
-		const column1 = columnsContainer.createEl('div', {
-			cls: 'column'
-		}) as HTMLElement;
-
-		column1.createEl('h3', { text: 'Column 1' });
-
+		// add element into first column
+		const column1 = columnsContainer.createEl('div', {cls: 'column'});
 		this.AddSetting(column1,
-			'Enter value 1',
-			'haha',
-			async (value: string) => {
-				console.log('Field 1 value changed:', value);
-			}
-		)	
-
-		const column2 = columnsContainer.createEl('div', {
-			cls: 'column'
-		});
-
-		column2.createEl('h3', { text: 'Column 2' });
-		this.AddSetting(column2,
-			'Enter value 2',
-			'haha2',
-			async (value: string) => {
-				console.log('Field 1 value changed:', value);
+			'Title',
+			'A book`s name',
+			undefined,
+			undefined,
+			(value: string) => {
+				this.bookData.title = value;
+				updateOtherElements(); 
 			}
 		)
-		const style = document.createElement('style');
-		style.innerHTML = `
-			.two-columns-container {
-				display: flex;
-				justify-content: space-between;
+		this.AddSetting(column1,
+			'Author/s',
+			undefined,
+			'Separate by ,',
+			undefined,
+			async (value: string) => {
+				this.bookData.author = value.split(',');
+				updateOtherElements(); 
 			}
-			.column {
-				flex: 1;
-				margin-right: 10px; /*gap between colomn*/
+		)
+
+		this.AddSetting(column1,
+			'ISBN',
+			undefined,
+			'ISBN10 or ISBN13',
+			undefined,
+			async (value: string) => {
+				const number = Utility.calcDigitInString(value);
+				if (number == 10){
+					this.bookData.isbn10 = value;
+				} else {
+					this.bookData.isbn13 = value;
+				}
 			}
-		`;
-		document.head.appendChild(style);
+		)
+
+		// change it to combobox
+		this.AddSetting(column1,
+			'Status',
+			'read,\nunread,\nwant to read,\ndon`t want to read',
+			undefined,
+			'unread',
+			async (value: string) => {
+				this.bookData.status = value;
+			}
+		)
+		// -- separate ---
+		
+		// add element into first column
+		const column2 = columnsContainer.createEl('div', {cls: 'column'});
+		//column2.createEl('h3', { text: 'Column 2' });
+		
+		this.AddSetting(column2,
+			'Publisher',
+			undefined,
+			'Who print this book?',
+			undefined,
+			async (value: string) => {
+				this.bookData.publisher = value;
+			}
+		)
+		this.AddSetting(column2,
+			'Publish',
+			'When publish book',
+			'set year here',
+			undefined,
+			async (value: string) => {
+				this.bookData.publishDate = value;
+			}
+		)
+
+		this.AddSetting(column2,
+			'Total pages',
+			undefined,
+			'',
+			undefined,
+			async (value: string) => {
+				this.bookData.totalPage = value;
+			}
+		)
+
+		this.AddSetting(column2,
+			'Cover URL',
+			undefined,
+			'For cool picture',
+			undefined,
+			async (value: string) => {
+				this.bookData.coverUrl = value;
+			}
+		)
+
+		this.AddSetting(column2,
+			'Tags',
+			undefined,
+			'Separate by ,',
+			undefined,
+			async (value: string) => {
+				this.bookData.tags = value.split(',');
+			}
+		)
+
+		// -- separate ---
+		booknameHeader = contentEl.createEl('h3', { text: 'Future book`s name:'});
 	}
+
+
 
 
 	private AddSetting(
 		contentEl: HTMLElement, 
 		Name: string, 
-		Desc: string, 
+		Desc: string = '',
+		PlaceHolder: string = '',
+		Value: string = '',
 		callback: (value: string) => any) {
 		new Setting(contentEl)
 			.setName(Name)
 			.setDesc(Desc)
 			.addText(text => text
-				.setPlaceholder('Enter values')
-				.setValue('')
+				.setPlaceholder(PlaceHolder)
+				.setValue(Value)
 				.onChange(callback));
 	}
 }
@@ -356,9 +399,85 @@ class SampleSettingTab extends PluginSettingTab {
 				.setPlaceholder('Put folder path')
 				.setValue(this.plugin.settings.bookNotesFolderPath)
 				.onChange(async (value) => {
-					this.plugin.settings.bookNotesFolderPath = value;
-					await this.plugin.saveSettings();
+					const absolutePath = this.app.vault.adapter.getResourcePath(value);
+					const absolutePath2 = this.app.vault.getAbstractFileByPath(value);
+					const files = this.app.vault.getAllLoadedFiles();
+					if (absolutePath2) {
+						this.plugin.settings.bookNotesFolderPath = value;
+						await this.plugin.saveSettings();
+						new Notice('Повний шлях до введеної папки: '+ absolutePath2.path);
+					} else {
+						new Notice('Папка не існує.');
+					}
+
+
+
+					//this.plugin.settings.bookNotesFolderPath = value;
+					///await this.plugin.saveSettings();
 				}));
+		containerEl.createEl("h2", { text: "text" });
+
+
+		//const files = this.app.vault.getRoot().path;  // got /
+		//const folder = this.app.vault.getRoot().vault.getName(); // Zettelcasten
+		//const files = this.app.vault.getRoot().vault.getFiles(); // got all 520 files, not folders
+		
+		// get all folders!
+		// const files = this.app.vault.getRoot().vault.getAllLoadedFiles();		
+		// files.forEach(file => {
+		// 	if (file instanceof TFolder){
+		// 		const text = JSON.stringify(file.name);
+		// 		containerEl.createEl("h1", { text: text });
+		// 	}
+		// })
+
+	
+		// const files = this.app.vault.getRoot().vault.getAllLoadedFiles();
+		// files.forEach(file => {
+		// 	if (file instanceof TFolder) {
+		// 		if (file.parent?.path == this.app.vault.getRoot().path){
+		// 			const text = JSON.stringify(file.name);
+		// 			containerEl.createEl("h1", { text: text });
+		// 		}
+		// 	}
+		// })
+
+		//const path = this.app.vault.getAbstractFileByPath("Бібліотека електронних книг");
+		const path = this.app.vault.getAbstractFileByPath("Templates");
+
+		containerEl.createEl("h2", { text: path?.path });
+
+		const files2 = path?.vault.getFiles();
+		files2?.forEach(async file => {
+			if (file instanceof TFile) {
+					if (file.parent == path && file.name.contains("BookTemplate")){
+						const vaultPath = await this.app.vault.read(file);
+						
+						const text = JSON.stringify(vaultPath);
+						containerEl.createEl("h2", { text: text });
+					}
+			}
+		})
+
+	
+
+
+		
+
+
+
+		
+		
+
+
+		// if (folder && folder instanceof TFolder) {
+		// 	const filesInFolder = folder.vault.getFiles();
+
+		// 	containerEl.createEl("h1", { text: JSON.stringify(filesInFolder) });
+
+		// }
+
+		//containerEl.createEl("h1", {text : JSON.stringify(this.app.vault.getRoot().path)});
 				
 	}
 }

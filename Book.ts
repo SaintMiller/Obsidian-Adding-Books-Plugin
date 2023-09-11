@@ -10,4 +10,22 @@ export class BookTemplate
     coverUrl: string;
     extension: string;
     hashSize: string;
+    status:string;
+    tags: string[]
+
+    constructor() {
+        this.title = '';
+        this.author = [];
+        this.publisher = '';
+        this.publishDate = '';
+        this.totalPage = '';
+        this.isbn10 = '';
+        this.isbn13 = '';
+        this.coverUrl = '';
+        this.extension = '';
+        this.hashSize = '';
+        this.status = '';
+        this.tags = [];
+
+    }
 }
