@@ -346,9 +346,6 @@ class SampleModal extends Modal {
 		booknameHeader = contentEl.createEl('h3', { text: 'Future book`s name:'});
 	}
 
-
-
-
 	private AddSetting(
 		contentEl: HTMLElement, 
 		Name: string, 
@@ -392,29 +389,29 @@ class SampleSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName('Path to notes bookshell folder')
-			.setDesc('Where you save notes about books')
-			.addText(text => text
-				.setPlaceholder('Put folder path')
-				.setValue(this.plugin.settings.bookNotesFolderPath)
-				.onChange(async (value) => {
-					const absolutePath = this.app.vault.adapter.getResourcePath(value);
-					const absolutePath2 = this.app.vault.getAbstractFileByPath(value);
-					const files = this.app.vault.getAllLoadedFiles();
-					if (absolutePath2) {
-						this.plugin.settings.bookNotesFolderPath = value;
-						await this.plugin.saveSettings();
-						new Notice('Повний шлях до введеної папки: '+ absolutePath2.path);
-					} else {
-						new Notice('Папка не існує.');
-					}
+		// new Setting(containerEl)
+		// 	.setName('Path to notes bookshell folder')
+		// 	.setDesc('Where you save notes about books')
+		// 	.addText(text => text
+		// 		.setPlaceholder('Put folder path')
+		// 		.setValue(this.plugin.settings.bookNotesFolderPath)
+		// 		.onChange(async (value) => {
+		// 			const absolutePath = this.app.vault.adapter.getResourcePath(value);
+		// 			const absolutePath2 = this.app.vault.getAbstractFileByPath(value);
+		// 			const files = this.app.vault.getAllLoadedFiles();
+		// 			if (absolutePath2) {
+		// 				this.plugin.settings.bookNotesFolderPath = value;
+		// 				await this.plugin.saveSettings();
+		// 				new Notice('Повний шлях до введеної папки: '+ absolutePath2.path);
+		// 			} else {
+		// 				new Notice('Папка не існує.');
+		// 			}
 
 
 
-					//this.plugin.settings.bookNotesFolderPath = value;
-					///await this.plugin.saveSettings();
-				}));
+		// 			//this.plugin.settings.bookNotesFolderPath = value;
+		// 			///await this.plugin.saveSettings();
+		// 		}));
 		containerEl.createEl("h2", { text: "text" });
 
 
@@ -444,7 +441,7 @@ class SampleSettingTab extends PluginSettingTab {
 
 		//const path = this.app.vault.getAbstractFileByPath("Бібліотека електронних книг");
 		const path = this.app.vault.getAbstractFileByPath("Templates");
-
+		/*
 		containerEl.createEl("h2", { text: path?.path });
 
 		const files2 = path?.vault.getFiles();
@@ -458,26 +455,83 @@ class SampleSettingTab extends PluginSettingTab {
 					}
 			}
 		})
+		*/
+		/*
+		new Setting(containerEl)
+			.setName('Path to bookshell folder2')
+			.setDesc('test combobox')
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOptions({
+						option1: 'optio 1',
+						option2: 'optio 2',
+						option3: 'optio 3',
+					})
+					.setValue('option1') 
+					.onChange((value) => {
+					});
+			});
+		*/
 
-	
+		const searchElem = new Setting(this.containerEl)
+			.setName('Path to notes bookshell folder')
+			.setDesc('Where you save notes about books')
+			.addSearch((search) => {
+				search.inputEl.style.width = '400px';
+				search
+					.setPlaceholder('Search...')
+					.onChange((query) => {
 
+						const dropdownContainer = document.getElementById("dropdown-container");
+						if (dropdownContainer == null ) {
+							return;
+						}
+						dropdownContainer.innerHTML = '';
 
+						const allFolders = Utility.getFolders(this.app, query);
+						const names = allFolders.map((folder) => folder.path)
+						names.forEach((suggestion) => {
+							const suggestionItem = document.createElement('div');
+							suggestionItem.textContent = suggestion;
+							suggestionItem.addEventListener('click', () => {
+								search.setValue(suggestion);
+								dropdownContainer.style.display = 'none';
+								new Notice(suggestion)
+
+								// add data into oprions class
+							});
+
+							dropdownContainer.appendChild(suggestionItem);
+						});
+
+						if (names.length > 0) {
+							dropdownContainer.style.display = 'block';
+						} else {
+							dropdownContainer.style.display = 'none';
+						}
+
+						search.inputEl.addEventListener('focus', () => {
+							dropdownContainer.style.display = 'block';
+						});
+						
+						search.inputEl.addEventListener('blur', () => {
+							function command(){
+								dropdownContainer.style.display = 'none';
+							}
+							setTimeout(command, 300);
+						});
+						
+					});
+			});
 		
+		const dropdownContainer = document.createElement('div');
+		dropdownContainer.id = 'dropdown-container';
+		dropdownContainer.style.display = 'none'; 
 
+		const dropdownList = document.createElement('ul');
+		dropdownList.id = 'dropdown-list';
+		dropdownContainer.appendChild(dropdownList);
 
-
-		
-		
-
-
-		// if (folder && folder instanceof TFolder) {
-		// 	const filesInFolder = folder.vault.getFiles();
-
-		// 	containerEl.createEl("h1", { text: JSON.stringify(filesInFolder) });
-
-		// }
-
-		//containerEl.createEl("h1", {text : JSON.stringify(this.app.vault.getRoot().path)});
-				
+		this.containerEl.appendChild(dropdownContainer);				
 	}
 }

@@ -1,4 +1,5 @@
 import { BookTemplate } from "Book";
+import { App, TAbstractFile, TFolder } from "obsidian";
 
 //Save all small function here and use them!
 export namespace Utility {
@@ -32,5 +33,17 @@ export namespace Utility {
         bookname += data.extension;
 
         return bookname;
+    }
+
+    export function getFolders(app: App, inputStr: string): TFolder[] {
+        const abstractFiles = app.vault.getAllLoadedFiles()
+        const lowerCaseInputStr = inputStr.toLowerCase()
+
+        return abstractFiles.filter(
+            (folder: TAbstractFile) =>
+                folder instanceof TFolder &&
+                folder.path.toLowerCase().contains(lowerCaseInputStr) &&
+                !folder.path.slice(lowerCaseInputStr.length).includes("/")
+        ) as TFolder[];
     }
 }

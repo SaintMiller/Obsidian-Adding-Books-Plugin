@@ -1,12 +1,4 @@
-/*
-
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
-
+/* thanks ai for helping */
 .two-columns-container {
     display: flex;
     justify-content: space-between;
@@ -14,6 +6,42 @@ If your plugin does not need CSS, delete this file.
 
 .column {
     flex: 1;
-    margin-right: 10px;
-    /*gap between colomn*/
+    margin-right: 10px; /*gap between colomn*/
 }
+
+/* --------------------------------- */
+/* css for dropdown-menu in settings */
+#dropdown-container {
+    position: absolute;
+    width: 400px;       /* Width Window */
+    background-color: inherit;
+    border: 1px solid inherit;
+    z-index: 1000;      /* Ensure your window is on top of other elements */
+    display: none;      /* Hide window first */
+    right: 50px; 
+    border-radius: 8px; /* Rounded rectangle */
+    padding: 8px;       /* Indent from edge */
+    max-height: 150px;  /* Maximum container height */
+    overflow-y: auto;   /* Maximum container height */
+    border: 1px solid rgb(85, 85, 85);/* 2px wide border with color inherited from parent */
+}
+        
+#dropdown-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#dropdown-list li {
+    padding: 2px;       /* Indents between text */
+    cursor: pointer;
+    white-space: nowrap;/* Prevents text from wrapping */
+    overflow: hidden;   /* Protects against large texts */
+    text-overflow: ellipsis;
+}
+
+#dropdown-list li:hover {
+    background-color: #f0f0f0;
+}
+/* END css for dropdown-menu in settings END */
+/* ----------------------------------------- */
