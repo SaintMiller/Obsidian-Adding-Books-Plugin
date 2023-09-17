@@ -2,8 +2,6 @@ import { BookTemplate } from 'Book';
 import { ExtractorFB2 } from 'Utility/ExtractorFB2';
 import { ExtractorPDF } from 'Utility/ExtractorPDF';
 import { Utility } from 'Utility/UtilityFunction';
-import * as fs from 'fs';
-
 import { App, Menu, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFolder, TFile } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
@@ -12,6 +10,7 @@ interface MyPluginSettings {
 	mySetting: string;
 	bookShellFolderPath: string;
 	bookNotesFolderPath: string;
+	bookNoteTemplatePath: string;
 	bookData: BookTemplate;
 }
 
@@ -19,6 +18,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default',
 	bookShellFolderPath: "",
 	bookNotesFolderPath: "",
+	bookNoteTemplatePath: "",
 	bookData: new BookTemplate(),
 }
 
@@ -276,17 +276,24 @@ class SampleModal extends Modal {
 				}
 			}
 		)
-
-		// change it to combobox
-		this.AddSetting(column1,
-			'Status',
-			'read,\nunread,\nwant to read,\ndon`t want to read',
-			undefined,
-			'unread',
-			async (value: string) => {
-				this.bookData.status = value;
-			}
-		)
+		
+		new Setting(column1)
+			.setName('Status')
+			.setDesc('ead,\nunread,\nwant to read,\ndon`t want to read')
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOptions({
+						option1: 'read',
+						option2: 'unread',
+						option3: 'want to read',
+						option4: 'don`t want to read',
+					})
+					.setValue('option1') 
+					.onChange((value) => {
+						this.bookData.status = value;
+					});
+			});
+		
 		// -- separate ---
 		
 		// add element into first column
@@ -380,109 +387,31 @@ class SampleSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Path to bookshell folder')
-			.setDesc('Where you have a digital books')
-			.addText(text => text
+			.setDesc("Where you have digital books. Disabled saved function if the folder isn\'t created")
+			.addText(text => 
+				text
 				.setPlaceholder('Put folder path')
 				.setValue(this.plugin.settings.bookShellFolderPath)
 				.onChange(async (value) => {
-					this.plugin.settings.bookShellFolderPath = value;
-					await this.plugin.saveSettings();
-				}));
-
-		// new Setting(containerEl)
-		// 	.setName('Path to notes bookshell folder')
-		// 	.setDesc('Where you save notes about books')
-		// 	.addText(text => text
-		// 		.setPlaceholder('Put folder path')
-		// 		.setValue(this.plugin.settings.bookNotesFolderPath)
-		// 		.onChange(async (value) => {
-		// 			const absolutePath = this.app.vault.adapter.getResourcePath(value);
-		// 			const absolutePath2 = this.app.vault.getAbstractFileByPath(value);
-		// 			const files = this.app.vault.getAllLoadedFiles();
-		// 			if (absolutePath2) {
-		// 				this.plugin.settings.bookNotesFolderPath = value;
-		// 				await this.plugin.saveSettings();
-		// 				new Notice('Повний шлях до введеної папки: '+ absolutePath2.path);
-		// 			} else {
-		// 				new Notice('Папка не існує.');
-		// 			}
-
-
-
-		// 			//this.plugin.settings.bookNotesFolderPath = value;
-		// 			///await this.plugin.saveSettings();
-		// 		}));
-		containerEl.createEl("h2", { text: "text" });
-
-
-		//const files = this.app.vault.getRoot().path;  // got /
-		//const folder = this.app.vault.getRoot().vault.getName(); // Zettelcasten
-		//const files = this.app.vault.getRoot().vault.getFiles(); // got all 520 files, not folders
-		
-		// get all folders!
-		// const files = this.app.vault.getRoot().vault.getAllLoadedFiles();		
-		// files.forEach(file => {
-		// 	if (file instanceof TFolder){
-		// 		const text = JSON.stringify(file.name);
-		// 		containerEl.createEl("h1", { text: text });
-		// 	}
-		// })
-
-	
-		// const files = this.app.vault.getRoot().vault.getAllLoadedFiles();
-		// files.forEach(file => {
-		// 	if (file instanceof TFolder) {
-		// 		if (file.parent?.path == this.app.vault.getRoot().path){
-		// 			const text = JSON.stringify(file.name);
-		// 			containerEl.createEl("h1", { text: text });
-		// 		}
-		// 	}
-		// })
-
-		//const path = this.app.vault.getAbstractFileByPath("Бібліотека електронних книг");
-		const path = this.app.vault.getAbstractFileByPath("Templates");
-		/*
-		containerEl.createEl("h2", { text: path?.path });
-
-		const files2 = path?.vault.getFiles();
-		files2?.forEach(async file => {
-			if (file instanceof TFile) {
-					if (file.parent == path && file.name.contains("BookTemplate")){
-						const vaultPath = await this.app.vault.read(file);
-						
-						const text = JSON.stringify(vaultPath);
-						containerEl.createEl("h2", { text: text });
+					if (Utility.doesDirectoryExist(value)){
+						this.plugin.settings.bookShellFolderPath = value;
+						await this.plugin.saveSettings();
+						new Notice(`Folder found!\nYou can save files\ninto this folder`);
+					} else {
+						new Notice(`Folder not found!`);
 					}
-			}
-		})
-		*/
-		/*
-		new Setting(containerEl)
-			.setName('Path to bookshell folder2')
-			.setDesc('test combobox')
-			.addDropdown((dropdown) => {
-				dropdown
-					.addOptions({
-						option1: 'optio 1',
-						option2: 'optio 2',
-						option3: 'optio 3',
-					})
-					.setValue('option1') 
-					.onChange((value) => {
-					});
-			});
-		*/
+				}).inputEl.style.width = '400px');
 
-		const searchElem = new Setting(this.containerEl)
+		new Setting(this.containerEl)
 			.setName('Path to notes bookshell folder')
 			.setDesc('Where you save notes about books')
 			.addSearch((search) => {
 				search.inputEl.style.width = '400px';
 				search
-					.setPlaceholder('Search...')
+					.setPlaceholder('Need to choose your folder...')
+					.setValue(this.plugin.settings.bookNotesFolderPath)
 					.onChange((query) => {
-
-						const dropdownContainer = document.getElementById("dropdown-container");
+						const dropdownContainer = document.getElementById("bookNotesFolder-dropdown-container");
 						if (dropdownContainer == null ) {
 							return;
 						}
@@ -493,12 +422,13 @@ class SampleSettingTab extends PluginSettingTab {
 						names.forEach((suggestion) => {
 							const suggestionItem = document.createElement('div');
 							suggestionItem.textContent = suggestion;
-							suggestionItem.addEventListener('click', () => {
+							suggestionItem.addEventListener('click', async () => {
 								search.setValue(suggestion);
 								dropdownContainer.style.display = 'none';
-								new Notice(suggestion)
+								new Notice(`You choose folder:\n${suggestion} folder`)
 
-								// add data into oprions class
+								this.plugin.settings.bookNotesFolderPath = suggestion;
+								await this.plugin.saveSettings();
 							});
 
 							dropdownContainer.appendChild(suggestionItem);
@@ -523,15 +453,85 @@ class SampleSettingTab extends PluginSettingTab {
 						
 					});
 			});
-		
+
 		const dropdownContainer = document.createElement('div');
-		dropdownContainer.id = 'dropdown-container';
+		dropdownContainer.id = 'bookNotesFolder-dropdown-container';
+		dropdownContainer.classList.add('dropdown-container');
 		dropdownContainer.style.display = 'none'; 
 
 		const dropdownList = document.createElement('ul');
 		dropdownList.id = 'dropdown-list';
 		dropdownContainer.appendChild(dropdownList);
 
-		this.containerEl.appendChild(dropdownContainer);				
+		this.containerEl.appendChild(dropdownContainer);	
+
+		// if you read these code and got facepalm -- I am sorry.
+		new Setting(this.containerEl)
+			.setName('Path to template notes')
+			.setDesc('Template for your future notes')
+			.addSearch((search) => {
+				search.inputEl.style.width = '400px';
+				search
+					.setPlaceholder('Need to choose your folder...')
+					.setValue(this.plugin.settings.bookNoteTemplatePath)
+					.onChange((query) => {
+						const templateNotedropdownContainer = document.getElementById("templateNote-dropdown-container");
+						if (templateNotedropdownContainer == null) {
+							return;
+						}
+						templateNotedropdownContainer.innerHTML = '';
+
+						const allFoldersFiles = Utility.getFoldersAndFilesInFolder(this.app, query);
+						allFoldersFiles.forEach((suggestion) => {
+							const suggestionItem = document.createElement('div');
+							suggestionItem.textContent = suggestion;
+
+							suggestionItem.addEventListener('click', async () => {
+								search.setValue(suggestion);
+								if (Utility.isObsidianFilePath(suggestion)){
+									templateNotedropdownContainer.style.display = 'none';
+									new Notice(`You choose template file :\n${suggestion}`)
+
+									this.plugin.settings.bookNoteTemplatePath = suggestion;
+									await this.plugin.saveSettings();
+								} else {
+									new Notice(`Is not a file\n${suggestion}`)
+								}
+								
+							});
+
+							templateNotedropdownContainer.appendChild(suggestionItem);
+						});
+
+						if (allFoldersFiles.length > 0) {
+							templateNotedropdownContainer.style.display = 'block';
+						} else {
+							templateNotedropdownContainer.style.display = 'none';
+						}
+
+						search.inputEl.addEventListener('focus', () => {
+							templateNotedropdownContainer.style.display = 'block';
+						});
+
+						search.inputEl.addEventListener('blur', () => {
+							function command() {
+								templateNotedropdownContainer.style.display = 'none';
+							}
+							setTimeout(command, 300);
+						});
+
+					});
+			});
+
+		const templateNotedropdownContainer = document.createElement('div');
+		templateNotedropdownContainer.id = 'templateNote-dropdown-container';
+		templateNotedropdownContainer.classList.add('dropdown-container');
+		templateNotedropdownContainer.style.display = 'none';
+
+		const templateNoteddropdownList = document.createElement('ul');
+		templateNoteddropdownList.id = 'dropdown-list';
+		templateNotedropdownContainer.appendChild(templateNoteddropdownList);
+
+		this.containerEl.appendChild(templateNotedropdownContainer);
 	}
 }

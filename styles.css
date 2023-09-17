@@ -11,19 +11,19 @@
 
 /* --------------------------------- */
 /* css for dropdown-menu in settings */
-#dropdown-container {
+.dropdown-container {
     position: absolute;
-    width: 400px;       /* Width Window */
+    width: 400px;           /* Width Window */
     background-color: inherit;
     border: 1px solid inherit;
-    z-index: 1000;      /* Ensure your window is on top of other elements */
-    display: none;      /* Hide window first */
-    right: 50px; 
-    border-radius: 8px; /* Rounded rectangle */
-    padding: 8px;       /* Indent from edge */
-    max-height: 150px;  /* Maximum container height */
-    overflow-y: auto;   /* Maximum container height */
-    border: 1px solid rgb(85, 85, 85);/* 2px wide border with color inherited from parent */
+    z-index: 1000;          /* Ensure your window is on top of other elements */
+    display: none;          /* Hide window first */
+    right: 50px;
+    border-radius: 8px;     /* Rounded rectangle */
+    padding: 8px;           /* Indent from edge */
+    max-height: 150px;      /* Maximum container height */
+    overflow-y: auto;       /* Maximum container height */
+    border: 1px solid rgb(85, 85, 85); /* 2px wide border with color inherited from parent */
 }
         
 #dropdown-list {
@@ -33,10 +33,10 @@
 }
 
 #dropdown-list li {
-    padding: 2px;       /* Indents between text */
+    padding: 2px;           /* Indents between text */
     cursor: pointer;
-    white-space: nowrap;/* Prevents text from wrapping */
-    overflow: hidden;   /* Protects against large texts */
+    white-space: nowrap;    /* Prevents text from wrapping */
+    overflow: hidden;       /* Protects against large texts */
     text-overflow: ellipsis;
 }
 
