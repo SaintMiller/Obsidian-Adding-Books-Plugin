@@ -1,5 +1,5 @@
 import { BookTemplate } from "Book";
-import { App, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
+import { App, FileSystemAdapter, TAbstractFile, TFile, TFolder } from "obsidian";
 import * as fs from 'fs';
 
 //Save all small function here and use them!
@@ -59,7 +59,6 @@ export namespace Utility {
                 file.path.startsWith(folderPath)
             );
         }
-
     }
 
     export function getFoldersAndFilesInFolder(app: App, inputStr: string): string[]  
@@ -89,5 +88,62 @@ export namespace Utility {
         );
 
         return filter.length >= 1;
+    }
+
+    export async function copyFileWithReplacements(
+        app: App,
+        templateFilePath: string,
+        targetFolderPath: string,
+        bookData: BookTemplate
+    ): Promise<boolean>  {
+        const fileAdapter = app.vault.adapter as FileSystemAdapter;
+        const coolTime = getCurrentTime();
+
+        try {
+            const sourceContent = await fileAdapter.read(templateFilePath);
+            let modifiedContent = sourceContent;
+            for (const key in bookData) {
+                const regex = new RegExp(`{{${key}}}`, 'g');
+                // @ts-ignore
+                let value = bookData[key]
+
+                let replacement = '';
+                if (Array.isArray(value) && value.length > 0) {
+                    replacement = value.join(', ');
+                } else if (typeof value === 'string') {
+                    replacement = value;
+                } else {
+                    replacement = '';
+                }
+                
+                modifiedContent = modifiedContent.replace(regex, replacement);
+            }
+
+            // I know it's a mistake, but it works for me. sorry(2)
+            modifiedContent = modifiedContent.replace(/\{\{DATE:YYYY-MM-DD HH:mm:ss\}\}/g, coolTime);
+
+            const sourceFileName = prepareFilename(bookData);
+            const targetPath = `${targetFolderPath}/${coolTime} ${sourceFileName}.md`;
+
+            await fileAdapter.write(targetPath, modifiedContent);
+            
+            return true;
+        } catch (error) {
+            console.error(`Error for copy template\nand create note:\n${error}`);
+            return false;
+        }
+    }
+
+    export function getCurrentTime(): string {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const hours = String(currentDate.getHours()).padStart(2, '0');
+        const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+
+        const formattedDate = `${year}-${month}-${day}-${hours}-${minutes}`;
+
+        return formattedDate;
     }
 }

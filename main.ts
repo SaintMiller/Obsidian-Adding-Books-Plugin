@@ -2,9 +2,7 @@ import { BookTemplate } from 'Book';
 import { ExtractorFB2 } from 'Utility/ExtractorFB2';
 import { ExtractorPDF } from 'Utility/ExtractorPDF';
 import { Utility } from 'Utility/UtilityFunction';
-import { App, Menu, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFolder, TFile } from 'obsidian';
-
-// Remember to rename these classes and interfaces!
+import { App, Menu, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 interface MyPluginSettings {
 	mySetting: string;
@@ -16,9 +14,9 @@ interface MyPluginSettings {
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default',
-	bookShellFolderPath: "",
-	bookNotesFolderPath: "",
-	bookNoteTemplatePath: "",
+	bookShellFolderPath: '',
+	bookNotesFolderPath: '',
+	bookNoteTemplatePath: '',
 	bookData: new BookTemplate(),
 }
 
@@ -28,124 +26,34 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		
-
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('package-search', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
+		const ribbonIconEl = this.addRibbonIcon(
+			'package-search', 
+			'Add book into bookshelf', 
+			(evt: MouseEvent) => {
+				new SampleModal(this.app, this.settings).open();
+				
+				// added element for options into ribon
+				const menu = new Menu();
 
-			new Notice('This is a notice!');
-			new SampleModal(this.app, this.settings).open();
-			
-			// added element for options into ribon
-			const menu = new Menu();
-
-			menu.addItem((item) =>
-				item
-					.setTitle("Copy")
-					.setIcon("documents")
-					.onClick(() => {
-						new Notice("Copied");
-					})
-			);
-			menu.showAtMouseEvent(evt);
-		});
-
-		// options into clicking icon
-		// this.registerEvent(
-		// 	this.app.workspace.on("file-menu", (menu, file) => {
-		// 		menu.addItem((item) => {
-		// 			item
-		// 				.setTitle("Print file path 👈")
-		// 				.setIcon("document")
-		// 				.onClick(async () => {
-		// 					new Notice(file.path);
-		// 				});
-		// 		});
-		// 	})
-		// );
-
-		// text into ... options
-		// this.registerEvent(
-		// 	this.app.workspace.on("editor-menu", (menu, editor, view) => {
-		// 		menu.addItem((item) => {
-		// 			item
-		// 				.setTitle("Print file path 👈")
-		// 				.setIcon("document")
-		// 				.onClick(async () => {
-		// 					new Notice(view.file?.path);
-		// 				});
-		// 		});
-		// 	})
-		// );
-
+				menu.showAtMouseEvent(evt);
+			});
 
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		// const statusBarItemEl = this.addStatusBarItem();
-		// statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
-		
-		// this.addCommand({
-		// 	id: 'open-sample-modal-simple',
-		// 	name: 'Open sample modal (simple)',
-		// 	callback: () => {
-		// 		new SampleModal(this.app).open();
-		// 	}
-		// });
-
-
-		// This adds an editor command that can perform some operation on the current editor instance
-		
-		
-		// this.addCommand({
-		// 	id: 'sample-editor-command',
-		// 	name: 'Sample editor command',
-		// 	editorCallback: (editor: Editor, view: MarkdownView) => {
-		// 		console.log(editor.getSelection());
-		// 		editor.replaceSelection('Sample Editor Command');
-		// 	}
-		// });
-
-
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		
-		// this.addCommand({
-		// 	id: 'open-sample-modal-complex',
-		// 	name: 'Open sample modal (complex)',
-		// 	checkCallback: (checking: boolean) => {
-		// 		// Conditions to check
-		// 		const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-		// 		if (markdownView) {
-		// 			// If checking is true, we're simply "checking" if the command can be run.
-		// 			// If checking is false, then we want to actually perform the operation.
-		// 			if (!checking) {
-		// 				new SampleModal(this.app).open();
-		// 			}
-
-		// 			// This command will only show up in Command Palette when the check function returns true
-		// 			return true;
-		// 		}
-		// 	}
-		// });
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
+		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {});
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
 	onunload() {
-
 	}
 
 	async loadSettings() {
@@ -164,10 +72,8 @@ class SampleModal extends Modal {
 	constructor(app: App, settingsData: MyPluginSettings) {
 		super(app);
 		this.settingsData = settingsData;
-		//this.bookdata = settingsData.bookData;
-
 		this.bookData = new BookTemplate();
-
+		settingsData.bookData = this.bookData;
 	}
 
 	onOpen() {
@@ -177,8 +83,14 @@ class SampleModal extends Modal {
 		this.createFiels(contentEl);
 
 		contentEl.createEl("div", {});
-		contentEl.createEl('button', { text: 'Create a new note' }).addEventListener('click', () => {
-			new Notice('File will be saved!\nNot yet');
+		contentEl.createEl('button', { text: 'Create a new note' })
+		.addEventListener('click', async () => {
+			const res = await Utility.copyFileWithReplacements(
+				this.app,
+				this.settingsData.bookNoteTemplatePath,
+				this.settingsData.bookNotesFolderPath,
+				this.bookData);
+			new Notice(`File will be saved?\t${res}!`);
 			this.close();
 		});
 
@@ -216,7 +128,6 @@ class SampleModal extends Modal {
 				new Notice("File contents: "+ fileContents.title);
 			}
 		});
-
 	}
 
 	onClose() {
@@ -224,16 +135,11 @@ class SampleModal extends Modal {
 		contentEl.empty();
 	}
 
-	// Do something with gotted BookTemplate Data
-	// Create a notes
-	// save a file into new place
-
 	private createFiels(contentEl: HTMLElement) {
 		let booknameHeader: HTMLHeadingElement;
 		const bookdata = this.bookData;
 
 		function updateOtherElements() {
-			// update another elements after updating code
 			booknameHeader.setText('Future book`s name:' + Utility.prepareFilename(bookdata));
 		}
 		
@@ -281,14 +187,15 @@ class SampleModal extends Modal {
 			.setName('Status')
 			.setDesc('ead,\nunread,\nwant to read,\ndon`t want to read')
 			.addDropdown((dropdown) => {
+				this.bookData.status = 'unread'; // option2
 				dropdown
 					.addOptions({
-						option1: 'read',
-						option2: 'unread',
-						option3: 'want to read',
-						option4: 'don`t want to read',
+						'read': 'read',
+						'unread': 'unread',
+						'want to read': 'want to read',
+						'don`t want to read': 'don`t want to read',
 					})
-					.setValue('option1') 
+					.setValue(this.bookData.status) 
 					.onChange((value) => {
 						this.bookData.status = value;
 					});
@@ -298,7 +205,6 @@ class SampleModal extends Modal {
 		
 		// add element into first column
 		const column2 = columnsContainer.createEl('div', {cls: 'column'});
-		//column2.createEl('h3', { text: 'Column 2' });
 		
 		this.AddSetting(column2,
 			'Publisher',
@@ -350,7 +256,7 @@ class SampleModal extends Modal {
 		)
 
 		// -- separate ---
-		booknameHeader = contentEl.createEl('h3', { text: 'Future book`s name:'});
+		booknameHeader = contentEl.createEl('h4', { text: 'Future book`s name: '});
 	}
 
 	private AddSetting(
