@@ -1,6 +1,8 @@
 import { BookTemplate } from "Book";
-import { App, FileSystemAdapter, TAbstractFile, TFile, TFolder } from "obsidian";
+import { App, FileSystemAdapter, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 import * as fs from 'fs';
+import * as path from 'path';
+import { MyPluginSettings } from "./MyPluginSettings";
 
 //Save all small function here and use them!
 export namespace Utility {
@@ -30,8 +32,8 @@ export namespace Utility {
         bookname += data.author.join(' ');
         bookname += " ";
         bookname += data.title;
-        bookname += " ";
-        bookname += data.extension;
+        // bookname += " ";
+        // bookname += data.extension;
 
         return bookname;
     }
@@ -90,7 +92,7 @@ export namespace Utility {
         return filter.length >= 1;
     }
 
-    export async function copyFileWithReplacements(
+    export async function copyTemplateFileWithReplacements(
         app: App,
         templateFilePath: string,
         targetFolderPath: string,
@@ -145,5 +147,23 @@ export namespace Utility {
         const formattedDate = `${year}-${month}-${day}-${hours}-${minutes}`;
 
         return formattedDate;
+    }
+
+    export function recreateBookFile(mps: MyPluginSettings): boolean {
+        const fileName = prepareFilename(mps.bookData);
+        if (fileName.length <= 1) {
+            new Notice(`File ${mps.bookData.filePath}\n NOT COPIED!`)
+
+            return false;
+        }
+
+        const newFileName = `${fileName}.${mps.bookData.extension}`
+        const destinationFilePath = path.join(mps.bookShellFolderPath, newFileName);
+
+        fs.copyFileSync(mps.bookData.filePath, destinationFilePath);
+
+        //fs.unlinkSync(sourceFilePath); // delete orig file
+
+        return true;
     }
 }

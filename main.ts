@@ -1,16 +1,9 @@
 import { BookTemplate } from 'Book';
 import { ExtractorFB2 } from 'Utility/ExtractorFB2';
 import { ExtractorPDF } from 'Utility/ExtractorPDF';
+import { MyPluginSettings } from 'Utility/MyPluginSettings';
 import { Utility } from 'Utility/UtilityFunction';
-import { App, Menu, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-
-interface MyPluginSettings {
-	mySetting: string;
-	bookShellFolderPath: string;
-	bookNotesFolderPath: string;
-	bookNoteTemplatePath: string;
-	bookData: BookTemplate;
-}
+import { App, Menu, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default',
@@ -27,10 +20,7 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 		
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon(
-			'package-search', 
-			'Add book into bookshelf', 
-			(evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('package-search', 'Add book into bookshelf', (evt: MouseEvent) => {
 				new SampleModal(this.app, this.settings).open();
 				
 				// added element for options into ribon
@@ -47,7 +37,10 @@ export default class MyPlugin extends Plugin {
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {});
+		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
+			console.log('click', evt);
+
+		});
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
@@ -85,12 +78,13 @@ class SampleModal extends Modal {
 		contentEl.createEl("div", {});
 		contentEl.createEl('button', { text: 'Create a new note' })
 		.addEventListener('click', async () => {
-			const res = await Utility.copyFileWithReplacements(
+			const res = await Utility.copyTemplateFileWithReplacements(
 				this.app,
 				this.settingsData.bookNoteTemplatePath,
 				this.settingsData.bookNotesFolderPath,
 				this.bookData);
 			new Notice(`File will be saved?\t${res}!`);
+			Utility.recreateBookFile(this.settingsData)
 			this.close();
 		});
 
@@ -103,8 +97,7 @@ class SampleModal extends Modal {
 		contentEl.addEventListener('drop', async (event) => {
 			event.preventDefault();
 			event.stopPropagation();
-
-			const files = event.dataTransfer?.files;
+			const files = event.dataTransfer!.files;
 			if (!files) {
 				return;
 			}
@@ -116,16 +109,21 @@ class SampleModal extends Modal {
 				let extractor;
 				if (extension == "pdf"){
 					extractor = new ExtractorPDF();
+					this.bookData.extension = extension;
 				} else if (extension == "fb2"){
 					extractor = new ExtractorFB2();
-				} else {
+					this.bookData.extension = extension;
+				} else { 
 					new Notice("Error with extension");
-					return;
 				}
 
-				const fileContents = await extractor.readFileContents(file) as BookTemplate;
-				new Notice("File name: " + file.name);
-				new Notice("File contents: "+ fileContents.title);
+				if (extractor){
+					const fileContents = await extractor.readFileContents(file) as BookTemplate;
+				}
+
+				// @ts-ignore
+				this.bookData.filePath = file.path;
+				
 			}
 		});
 	}
@@ -352,7 +350,8 @@ class SampleSettingTab extends PluginSettingTab {
 						
 						search.inputEl.addEventListener('blur', () => {
 							function command(){
-								dropdownContainer.style.display = 'none';
+								if (dropdownContainer)
+									dropdownContainer.style.display = 'none';
 							}
 							setTimeout(command, 300);
 						});
@@ -421,7 +420,8 @@ class SampleSettingTab extends PluginSettingTab {
 
 						search.inputEl.addEventListener('blur', () => {
 							function command() {
-								templateNotedropdownContainer.style.display = 'none';
+								if (templateNotedropdownContainer)
+									templateNotedropdownContainer.style.display = 'none';
 							}
 							setTimeout(command, 300);
 						});

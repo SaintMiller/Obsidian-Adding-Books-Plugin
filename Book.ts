@@ -11,7 +11,8 @@ export class BookTemplate
     extension: string;
     hashSize: string;
     status:string;
-    tags: string[]
+    tags: string[];
+    filePath: string;
 
     constructor() {
         this.title = '';
