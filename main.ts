@@ -1,4 +1,4 @@
-import { BookTemplate } from 'Book';
+import { BookTemplate } from 'Utility/Book';
 import { ExtractorFB2 } from 'Utility/ExtractorFB2';
 import { ExtractorPDF } from 'Utility/ExtractorPDF';
 import { MyPluginSettings } from 'Utility/MyPluginSettings';

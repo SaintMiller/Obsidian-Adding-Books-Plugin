@@ -6,7 +6,7 @@
 
 .column {
     flex: 1;
-    margin-right: 10px; /*gap between colomn*/
+    margin-right: 10px;     /*gap between colomn*/
 }
 
 /* --------------------------------- */
@@ -23,7 +23,7 @@
     padding: 8px;           /* Indent from edge */
     max-height: 150px;      /* Maximum container height */
     overflow-y: auto;       /* Maximum container height */
-    border: 1px solid rgb(85, 85, 85); /* 2px wide border with color inherited from parent */
+    border: 1px solid rgb(85, 85, 85); /* wide border with color inherited from parent */
 }
         
 #dropdown-list {

@@ -1,4 +1,4 @@
-import { BookTemplate } from "Book";
+import { BookTemplate } from "Utility/Book";
 import { App, FileSystemAdapter, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 import * as fs from 'fs';
 import * as path from 'path';

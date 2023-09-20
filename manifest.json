@@ -1,11 +1,10 @@
 {
 	"id": "adding-book-plgin",
 	"name": "Adding Book Plugin",
-	"version": "0.0.1",
-	"minAppVersion": "0,0.15",
+	"version": "1.0.0",
+	"minAppVersion": "0.12.0",
 	"description": "This plagin helps me to archive my books by categories. Simple way to create notes with data into obsidian",
-	"author": "S. M.",
-	"authorUrl": "",
-	"fundingUrl": "",
+	"author": "SaintMiller",
+	"authorUrl": "https://github.com/SaintMiller",
 	"isDesktopOnly": false
 }

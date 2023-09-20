@@ -1,4 +1,4 @@
-import { BookTemplate } from 'Book';
+import { BookTemplate } from 'Utility/Book';
 import Extractor from '../Utility/Extractor';
 import { Notice } from 'obsidian';
 
