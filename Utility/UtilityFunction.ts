@@ -2,6 +2,8 @@ import { BookTemplate } from "Book";
 import { App, FileSystemAdapter, Notice, TAbstractFile, TFile, TFolder } from "obsidian";
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
+
 import { MyPluginSettings } from "./MyPluginSettings";
 
 //Save all small function here and use them!
@@ -34,6 +36,8 @@ export namespace Utility {
         bookname += data.title;
         // bookname += " ";
         // bookname += data.extension;
+
+        data.filename = bookname;
 
         return bookname;
     }
@@ -122,10 +126,10 @@ export namespace Utility {
             }
 
             // I know it's a mistake, but it works for me. sorry(2)
-            modifiedContent = modifiedContent.replace(/\{\{DATE:YYYY-MM-DD HH:mm:ss\}\}/g, coolTime);
+            modifiedContent = modifiedContent.replace(/\{\{DATE:YYYY-MM-DD HH:mm:ss\}\}/g, coolTime[1]);
 
             const sourceFileName = prepareFilename(bookData);
-            const targetPath = `${targetFolderPath}/${coolTime} ${sourceFileName}.md`;
+            const targetPath = `${targetFolderPath}/${coolTime[0]} ${sourceFileName}.md`;
 
             await fileAdapter.write(targetPath, modifiedContent);
             
@@ -136,7 +140,7 @@ export namespace Utility {
         }
     }
 
-    export function getCurrentTime(): string {
+    export function getCurrentTime(): string[] {
         const currentDate = new Date();
         const year = currentDate.getFullYear();
         const month = String(currentDate.getMonth() + 1).padStart(2, '0');
@@ -144,9 +148,10 @@ export namespace Utility {
         const hours = String(currentDate.getHours()).padStart(2, '0');
         const minutes = String(currentDate.getMinutes()).padStart(2, '0');
 
-        const formattedDate = `${year}-${month}-${day}-${hours}-${minutes}`;
+        const formattedDate1 = `${year}-${month}-${day}-${hours}-${minutes}`;
+        const formattedDate2 = `${year}-${month}-${day} ${hours}:${minutes}`;
 
-        return formattedDate;
+        return [formattedDate1, formattedDate2];
     }
 
     export function recreateBookFile(mps: MyPluginSettings): boolean {
@@ -165,5 +170,64 @@ export namespace Utility {
         //fs.unlinkSync(sourceFilePath); // delete orig file
 
         return true;
+    }
+
+    export function calculateFileHash(filePath: string, algorithm: string = 'sha256'): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            const hash = crypto.createHash(algorithm);
+            const stream = fs.createReadStream(filePath);
+
+            stream.on('data', (data) => {
+                hash.update(data);
+            });
+
+            stream.on('end', () => {
+                const fileHash = hash.digest('hex');
+                resolve(fileHash);
+            });
+
+            stream.on('error', (error) => {
+                reject(error);
+            });
+        });
+    }
+
+
+    export async function checkBookNotesByTag(app: App, settings: MyPluginSettings): Promise<boolean> {
+        let isUniq = true;
+        const allFiles = app.vault.getFiles();
+        const filtered = allFiles.filter((file: TFile) =>
+            file.path.startsWith(settings.bookNotesFolderPath)
+        );
+        
+        const hash = settings.bookData.fileHash256;
+
+        const promises = filtered.map(async (file) => {
+            const tag = await getHashTagValue(app, file);
+            if ((tag != null) && (tag.includes(hash) || hash.includes(tag))) {
+                isUniq = false;
+            }
+        });
+
+        await Promise.all(promises);
+
+        return isUniq;
+    }
+
+    async function getHashTagValue(app: App, file: TFile): Promise<string | null> {
+        try {
+            const fileContent = await app.vault.read(file);
+
+            const sizeTagRegex = /fileHash:\s*(\S+)/i;
+            const match = sizeTagRegex.exec(fileContent);
+
+            if (match && match.length >= 1) {
+                return match[0];
+            } else {
+                return null;
+            }
+        } catch (error) {
+            return null;
+        }
     }
 }

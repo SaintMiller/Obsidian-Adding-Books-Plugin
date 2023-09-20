@@ -13,6 +13,8 @@ export class BookTemplate
     status:string;
     tags: string[];
     filePath: string;
+    fileHash256: string;
+    filename: string;
 
     constructor() {
         this.title = '';

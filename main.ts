@@ -101,7 +101,6 @@ class SampleModal extends Modal {
 			if (!files) {
 				return;
 			}
-			new Notice( (files.length).toString());
 			if (files.length > 0) {
 				const file = files[0];
 				const extension = Utility.getFileExtension(file.name).toLowerCase();
@@ -123,8 +122,21 @@ class SampleModal extends Modal {
 
 				// @ts-ignore
 				this.bookData.filePath = file.path;
-				
-			}
+
+				Utility.calculateFileHash(this.bookData.filePath)
+					.then((hash: string) => {
+						this.bookData.fileHash256 = hash;
+
+						Utility.checkBookNotesByTag(this.app, this.settingsData).then((isUniq: boolean) => {
+							if (!isUniq){
+								new Notice(`You have this book in bookshell!`)
+							}
+						})
+					})
+					.catch((error: any) => {
+						console.error('Error with calc hash:', error);
+					});
+				}
 		});
 	}
 
@@ -138,7 +150,7 @@ class SampleModal extends Modal {
 		const bookdata = this.bookData;
 
 		function updateOtherElements() {
-			booknameHeader.setText('Future book`s name:' + Utility.prepareFilename(bookdata));
+			booknameHeader.setText('Future book`s name: ' + Utility.prepareFilename(bookdata));
 		}
 		
 		const columnsContainer = contentEl.createEl('div', {cls: 'two-columns-container'});
